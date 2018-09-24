@@ -3,10 +3,12 @@
 
 import numpy as np
 import cv2
-import f from q1ImageFiltering
+import q1ImageFiltering
 
 img1 = cv2.imread('dog.bmp')
 img2 = cv2.imread('cat.bmp')
 
-#def create_hybrid_image(img1, img2, lowf, highf):
+def create_hybrid_image(img1, img2, lowf, highf):
+    return
+
     
