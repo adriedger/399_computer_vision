@@ -3,12 +3,34 @@
 
 import numpy as np
 import cv2
-import q1ImageFiltering
+import q1ImageFiltering as q1
 
-img1 = cv2.imread('dog.bmp')
-img2 = cv2.imread('cat.bmp')
+img1 = cv2.imread('data/dog.bmp')
+img2 = cv2.imread('data/cat.bmp')
+lowfreq = 99
+highfreq = 35
+grey_img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+#grey_img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+grey_img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
 
-def create_hybrid_image(img1, img2, lowf, highf):
+def create_hybrid_image(img1, img2, lowfq, highfq):
+    lpf = cv2.getGaussianKernel(lowfq, -1)
+    low_pass = q1.my_imfilter(img1, lpf)
+
+    #hpf = np.subtract(1, cv2.getGaussianKernel(highfq, -1))
+    #high_pass = q1.my_imfilter(img2, hpf)
+
+    lpf2 = cv2.getGaussianKernel(highfq, -1)
+    low_pass2 = q1.my_imfilter(img2, lpf2)
+    high_pass = np.subtract(img2, low_pass2[:,:,0])
+
+    hybrid = np.add(low_pass[:,:,0], high_pass)
+
+    cv2.imshow('lp', low_pass)
+    cv2.imshow('hp', high_pass)
+    cv2.imshow('hybrid', hybrid)
+    cv2.waitKey()
+
     return
 
-    
+create_hybrid_image(grey_img1, grey_img2, lowfreq, highfreq)
