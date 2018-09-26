@@ -31,6 +31,18 @@ def create_hybrid_image(img1, img2, lowfq, highfq):
     cv2.imshow('hybrid', hybrid)
     cv2.waitKey()
 
-    return
+    return low_pass, high_pass, hybrid
 
-create_hybrid_image(grey_img1, grey_img2, lowfreq, highfreq)
+blur, sharp, hybrid = create_hybrid_image(grey_img1, grey_img2, lowfreq, highfreq)
+
+pG = hybrid.copy()
+G = hybrid.copy()
+for i in range(4):
+    G = cv2.pyrDown(G)
+    pad = np.ones((hybrid.shape[0]-G.shape[0],G.shape[1]))
+    tmp = np.vstack((pad, G))
+    pG = np.hstack((pG,tmp))
+cv2.imshow('img', pG.astype(np.uint8))
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
