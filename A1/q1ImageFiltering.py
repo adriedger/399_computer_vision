@@ -25,7 +25,7 @@ def my_imfilter(img, f):
     return out_img
 
 def test():
-    img = cv2.imread('lena.tif')
+    img = cv2.imread('data/lena.tif')
     s = 7
 
     f = cv2.getGaussianKernel(s*4+1, -1)
@@ -40,5 +40,5 @@ def test():
     cv2.imshow('blur_lena', out_img)
     cv2.waitKey()
     cv2.destroyAllWindows()
-    cv2.imwrite('blur_lena.tif', out_img)
+    cv2.imwrite('out_data/blur_lena.tif', out_img)
 
