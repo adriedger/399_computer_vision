@@ -59,16 +59,18 @@ def visualize_theta(mag, theta):
             pixel = np.multiply(color, float(mag[x, y])/255)
             #print pixel, color, float(mag[x, y])/255
             out_img[x, y] = pixel
+
+    return out_img
     
-    cv2.imshow('visualize_theta', out_img)
 
 diff_mag, diff_theta = edge_detection(img, 'diff')
-#sobel = edge_detection(img, 'sobel')
-#laplacian = edge_detection(img, 'laplacian')
+sobel_mag, sobel_theta = edge_detection(img, 'sobel')
+laplacian_mag = edge_detection(img, 'laplacian')
 
 cv2.imshow('diff_mag', diff_mag)
-#cv2.imshow('sobel', sobel)
-#cv2.imshow('laplacian', laplacian)
+cv2.imshow('sobel_mag', sobel_mag)
+cv2.imshow('laplacian_mag', laplacian_mag)
 
-visualize_theta(diff_mag, diff_theta)
+cv2.imshow('diff_theta', visualize_theta(diff_mag, diff_theta))
+cv2.imshow('sobel_theta', visualize_theta(sobel_mag, sobel_theta))
 cv2.waitKey()
