@@ -13,12 +13,12 @@ def edge_detection(img, method):
     grey_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     if method == 'diff':
-        #convert to float
+        #return as float (as to include negative values)
         diff_x = cv2.filter2D(grey_img, cv2.CV_32F, np.array([[0, 1], [-1, 0]]))
         diff_y = cv2.filter2D(grey_img, cv2.CV_32F, np.array([[1, 0], [0, -1]]))
         #calculate gradient magnitude, theta
         gradient_mag, theta = cv2.cartToPolar(diff_x, diff_y)
-        #convert back to uint8 (0,255)
+        #convert back to uint8 (0,255) and absolute values
         gradient_mag = cv2.convertScaleAbs(gradient_mag)
 
         return gradient_mag, theta
@@ -44,10 +44,10 @@ def visualize_theta(mag, theta):
     #create new image, assign pixel to corresponding color*normalized mag
     row, col = mag.shape
     out_img = np.zeros([row, col, 3], dtype=np.uint8)
-    #color = [0, 0, 0]
+    
     for y in range(row):
         for x in range(col):
-            #print mag[x, y], theta[x, y]
+            
             if theta[x, y] <= (3.14/2):
                 color = [255, 0 ,0]
             elif theta[x, y] <= (3.14):
@@ -57,7 +57,6 @@ def visualize_theta(mag, theta):
             else:
                 color = [255, 0, 255]
             pixel = np.multiply(color, float(mag[x, y])/255)
-            #print pixel, color, float(mag[x, y])/255
             out_img[x, y] = pixel
 
     return out_img
