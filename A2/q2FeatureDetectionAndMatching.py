@@ -55,4 +55,14 @@ def my_harris(img, k, blocksize):
     cv2.imshow('features', img)
     cv2.waitKey()
 
+def sift():
+
+    grey_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    sift = cv2.xfeatures2d.SIFT_create()
+    kp = sift.detect(grey_img, None)
+    out_img = cv2.drawKeypoints(grey_img, kp, None)
+    cv2.imshow('sift_keypoints', out_img)
+    cv2.waitKey()
+
 my_harris(img, 0, 9)
+sift()

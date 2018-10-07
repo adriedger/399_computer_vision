@@ -48,16 +48,16 @@ def visualize_theta(mag, theta):
     for y in range(row):
         for x in range(col):
             
-            if theta[x, y] <= (3.14/2):
+            if theta[y, x] <= (3.14/2):
                 color = [255, 0 ,0]
-            elif theta[x, y] <= (3.14):
+            elif theta[y, x] <= (3.14):
                 color = [0, 255 ,0]
-            elif theta[x, y] <= (3.14*1.5):
+            elif theta[y, x] <= (3.14*1.5):
                 color = [0, 0 ,255]
             else:
                 color = [255, 0, 255]
-            pixel = np.multiply(color, float(mag[x, y])/255)
-            out_img[x, y] = pixel
+            pixel = np.multiply(color, float(mag[y, x])/255)
+            out_img[y, x] = pixel
 
     return out_img
     
