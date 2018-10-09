@@ -4,7 +4,6 @@
 import numpy as np
 import cv2 
 
-
 def my_harris(img, k, blocksize):
 
     grey_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -46,20 +45,12 @@ def my_harris(img, k, blocksize):
 
     return c_img
     
-def sift():
-
-    grey_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    sift = cv2.xfeatures2d.SIFT_create()
-    kp = sift.detect(grey_img, None)
-    out_img = cv2.drawKeypoints(grey_img, kp, None)
-    cv2.imshow('sift_keypoints', out_img)
-    cv2.waitKey()
-
 def test2_1():
+
+    # 2.1. Harris corner detector 
+
     img = cv2.imread('lena.tif')
     img_copy = np.copy(img)
-
-    cv2.imshow('input', img)
 
     out1 = my_harris(img, 0.04, 2)
     
@@ -75,21 +66,65 @@ def test2_1():
     cv2.waitKey()
 
 def test2_2():
+
+    # 2.2 SIFT
+
     #0 on imread returns a greyscale
     img = cv2.imread('data_q2/episcopal_gaudi1.jpg',0)  
-    img = cv2.resize(img,None,fx=0.5, fy=0.5, interpolation = cv2.INTER_CUBIC)
+    img = cv2.resize(img, None, fx=0.5, fy=0.5, interpolation = cv2.INTER_CUBIC)
     #img = cv2.imread('lena.tif', 0)  
     
+    # initiate SIFT detector
     sift = cv2.xfeatures2d.SIFT_create()
+    # compute the sift detectors (kp) and descriptors (des) using cv2 functions
     kp, des = sift.detectAndCompute(img, None)
     
     # visualize results
     img_d = cv2.drawKeypoints(img, kp, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     cv2.imshow('SIFTfeatures', img_d)
     cv2.imshow('sift_keypoints', des)
-    cv2.waitKey(0)
+    cv2.waitKey()
     #cv2.imwrite('sift_keypoints.jpg',img)
+
+def test2_3():
+
+    # 2.3 Matching SIFT features
+
+    img1 = cv2.imread('data_q2/episcopal_gaudi1.jpg', 0) # queryImage
+    img2 = cv2.imread('data_q2/episcopal_gaudi2.jpg', 0) # trainImage
+    img1 = cv2.resize(img1, None, fx=0.5, fy=0.5, interpolation = cv2.INTER_CUBIC)
+    img2 = cv2.resize(img2, None, fx=0.5, fy=0.5, interpolation = cv2.INTER_CUBIC)
+
+    sift = cv2.xfeatures2d.SIFT_create()
+    kp1, des1 = sift.detectAndCompute(img1, None)
+    kp2, des2 = sift.detectAndCompute(img2, None)
+    #des is n by 128 matrix
+    
+    # 2.3.1 brute force matching, compute and sort matches points into list matches
+    # create BFMatcher object, use NORM_L2 as normType(default) for SIFT
+    bf = cv2.BFMatcher(normType=cv2.NORM_L2, crossCheck=True)
+    matches = bf.match(des1,des2)
+    # Sort them in the order of their distance.
+    matches = sorted(matches, key = lambda x:x.distance)
+    # Draw first 10 matches.
+    img_d = cv2.drawMatches(img1, kp1, img2, kp2, matches[:10], None, flags=2)
+    cv2.imshow('SIFTmatches  features-brute force', img_d)
+    
+    # 2.3.2 ratio distance, gives list of best two matches for each feature
+    #crossCheck needs to be set as False(defalut)
+    bf2 = cv2.BFMatcher()
+    matches = bf2.knnMatch(des1, des2, k=2)
+    # Apply ratio test and save good matches in a list of DMatch elements
+    good_match = []
+    for m,n in matches:
+            if m.distance < 0.75*n.distance:
+                        good_match.append([m])    
+    # Draw good matches 
+    img_d2 = cv2.drawMatchesKnn(img1 ,kp1,img2, kp2, good_match, None, flags=2)
+    cv2.imshow('SIFTmatches  features-ratio distance', img_d2)
+    cv2.waitKey()
 
 
 test2_1()
 test2_2()
+test2_3()

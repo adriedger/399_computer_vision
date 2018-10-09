@@ -65,6 +65,7 @@ def visualize_theta(mag, theta):
 diff_mag, diff_theta = edge_detection(img, 'diff')
 sobel_mag, sobel_theta = edge_detection(img, 'sobel')
 laplacian_mag = edge_detection(img, 'laplacian')
+canny = cv2.Canny(img,100,200)
 
 cv2.imshow('diff_mag', diff_mag)
 cv2.imshow('sobel_mag', sobel_mag)
@@ -72,4 +73,6 @@ cv2.imshow('laplacian_mag', laplacian_mag)
 
 cv2.imshow('diff_theta', visualize_theta(diff_mag, diff_theta))
 cv2.imshow('sobel_theta', visualize_theta(sobel_mag, sobel_theta))
+
+cv2.imshow('canny', canny)
 cv2.waitKey()
