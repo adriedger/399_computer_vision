@@ -7,8 +7,6 @@ import cv2
 
 def my_harris(img, k, blocksize):
 
-    img_copy = np.copy(img)
-
     grey_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     row, col = grey_img.shape
     
@@ -23,9 +21,8 @@ def my_harris(img, k, blocksize):
         
     #need to be float to save pixels as correct data type
     c_img = np.zeros([row, col], dtype=np.float32)
-    out_img = np.zeros([row, col, 1], dtype=np.uint8)
     
-    #calculate c for each pixel, threshold
+    #calculate c for each pixel
     for y in range(row-blocksize):
         for x in range(col-blocksize):
             
@@ -33,37 +30,22 @@ def my_harris(img, k, blocksize):
             m2 = np.sum(IxIy[y:y+blocksize, x:x+blocksize])
             m3 = np.sum(IyIy[y:y+blocksize, x:x+blocksize])
             c = (m1*m3-m2*m2) - k*(m1+m3)
-            #threshold, assign cornerness to middle pixel
+            #assign cornerness to middle pixel
             mid = blocksize//2
             c_img[y+mid, x+mid] = c
-            #if c > 10000000000:
-                #c_img[y+mid, x+mid] = c
-            #else:
-                #c_img[y+mid, x+mid] = 0
+    
+    #keep the max of blocksize of c_img, supress lower values
+    for y in range(0, row, blocksize):
+        for x in range(0, col, blocksize):
+            
+            minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(c_img[y:y+blocksize, x:x+blocksize]) 
+            #keep highest, Loc returns as a Point(x, y)
+            locX, locY = maxLoc
+            c_img[y:y+blocksize, x:x+blocksize] = 0
+            c_img[y+locY, x+locX] = maxVal
 
     return c_img
     
-    #keep the max of sections of c_img, supress lower values
-    for y in range(0, row, 20):
-        for x in range(0, col, 20):
-            
-            minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(c_img[y:y+20, x:x+20]) 
-            #keep highest, Loc returns as a Point(x, y)
-            if maxVal > 0:
-                locX, locY = maxLoc
-                #out_img[y+locY, x+locX] = 255
-                img[y+locY-3:y+locY+3, x+locX-3:x+locX+3] = [0, 0, 255]
-    
-    #cv2.imshow('cornerness', out_img)
-    cv2.imshow('features', img)
-    cv2.waitKey()
-
-    dst = cv2.cornerHarris(grey_img,2,3,0.04)
-    print dst.max(), dst.min()
-    img_copy[dst>0.01*dst.max()]=[0,0,255]
-    cv2.imshow('features2', img_copy)
-    cv2.waitKey()
-
 def sift():
 
     grey_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -77,7 +59,6 @@ def test2_1():
     img = cv2.imread('lena.tif')
     img_copy = np.copy(img)
 
-    #img = cv2.imread('data_q2/checkboard.png')
     cv2.imshow('input', img)
 
     out1 = my_harris(img, 0.04, 2)
@@ -85,9 +66,7 @@ def test2_1():
     grey_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     out2 = cv2.cornerHarris(grey_img, 2, 3, 0.04)
     
-    print out1.shape, out1.max()
-    print out2.shape, out2.max()
-
+    #threshold, visualize
     img[out1>0.01*out1.max()]=[0,0,255]
     img_copy[out2>0.01*out2.max()]=[0,0,255]
 
@@ -95,12 +74,22 @@ def test2_1():
     cv2.imshow('cv2_cornerHarris', img_copy)
     cv2.waitKey()
 
+def test2_2():
+    #0 on imread returns a greyscale
+    img = cv2.imread('data_q2/episcopal_gaudi1.jpg',0)  
+    img = cv2.resize(img,None,fx=0.5, fy=0.5, interpolation = cv2.INTER_CUBIC)
+    #img = cv2.imread('lena.tif', 0)  
+    
+    sift = cv2.xfeatures2d.SIFT_create()
+    kp, des = sift.detectAndCompute(img, None)
+    
+    # visualize results
+    img_d = cv2.drawKeypoints(img, kp, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    cv2.imshow('SIFTfeatures', img_d)
+    cv2.imshow('sift_keypoints', des)
+    cv2.waitKey(0)
+    #cv2.imwrite('sift_keypoints.jpg',img)
+
+
 test2_1()
-#img = cv2.imread('lena.tif')
-#my_harris(img, 0.04, 2)
-#dst = cv2.cornerHarris(gray,2,3,0.04)
-#dst = my_harris(img, 0.04, 3)
-#img[dst>0.01*dst.max()]=[0,0,255]
-#cv2.imshow('features', img)
-#cv2.waitKey()
-#sift()
+test2_2()
