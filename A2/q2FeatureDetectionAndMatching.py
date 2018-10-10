@@ -33,17 +33,18 @@ def my_harris(img, k, blocksize):
             mid = blocksize//2
             c_img[y+mid, x+mid] = c
     
-    #keep the max of blocksize of c_img, supress lower values
-    for y in range(0, row, blocksize):
-        for x in range(0, col, blocksize):
+    return c_img
+
+    #keep the max of 3x3 of c_img, supress lower values. NOT USED IN THIS ASSIGNMENT
+    for y in range(0, row, 3):
+        for x in range(0, col, 3):
             
-            minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(c_img[y:y+blocksize, x:x+blocksize]) 
+            minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(c_img[y:y+3, x:x+3]) 
             #keep highest, Loc returns as a Point(x, y)
             locX, locY = maxLoc
-            c_img[y:y+blocksize, x:x+blocksize] = 0
+            c_img[y:y+3, x:x+3] = 0
             c_img[y+locY, x+locX] = maxVal
 
-    return c_img
     
 def test2_1():
 
@@ -61,8 +62,8 @@ def test2_1():
     img[out1>0.01*out1.max()]=[0,0,255]
     img_copy[out2>0.01*out2.max()]=[0,0,255]
 
-    cv2.imshow('my_harris', img)
-    cv2.imshow('cv2_cornerHarris', img_copy)
+    cv2.imshow('my_harris blocksize=2', img)
+    cv2.imshow('cv2_cornerHarris blocksize=2', img_copy)
     cv2.waitKey()
 
 def test2_2():
@@ -78,13 +79,12 @@ def test2_2():
     sift = cv2.xfeatures2d.SIFT_create()
     # compute the sift detectors (kp) and descriptors (des) using cv2 functions
     kp, des = sift.detectAndCompute(img, None)
-    
+    #print kp[0].size, kp[0].pt, kp[0].angle   
     # visualize results
     img_d = cv2.drawKeypoints(img, kp, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     cv2.imshow('SIFTfeatures', img_d)
     cv2.imshow('sift_keypoints', des)
     cv2.waitKey()
-    #cv2.imwrite('sift_keypoints.jpg',img)
 
 def test2_3():
 
@@ -98,7 +98,6 @@ def test2_3():
     sift = cv2.xfeatures2d.SIFT_create()
     kp1, des1 = sift.detectAndCompute(img1, None)
     kp2, des2 = sift.detectAndCompute(img2, None)
-    #des is n by 128 matrix
     
     # 2.3.1 brute force matching, compute and sort matches points into list matches
     # create BFMatcher object, use NORM_L2 as normType(default) for SIFT
@@ -107,7 +106,7 @@ def test2_3():
     # Sort them in the order of their distance.
     matches = sorted(matches, key = lambda x:x.distance)
     # Draw first 10 matches.
-    img_d = cv2.drawMatches(img1, kp1, img2, kp2, matches[:10], None, flags=2)
+    img_d = cv2.drawMatches(img1, kp1, img2, kp2, matches, None, flags=2)
     cv2.imshow('SIFTmatches  features-brute force', img_d)
     
     # 2.3.2 ratio distance, gives list of best two matches for each feature
@@ -123,7 +122,6 @@ def test2_3():
     img_d2 = cv2.drawMatchesKnn(img1 ,kp1,img2, kp2, good_match, None, flags=2)
     cv2.imshow('SIFTmatches  features-ratio distance', img_d2)
     cv2.waitKey()
-
 
 test2_1()
 test2_2()
