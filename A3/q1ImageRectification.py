@@ -26,29 +26,27 @@ def get_corners(img):
             cv2.imshow('input', img_copy)
             break
     
-    return np.asarray(pts)
+    # data type needs to be float for cv funtions
+    return np.asarray(pts).astype(np.float32)
 
 def get_affine(pts1, pts2):
 
-    # shape 2x4 pts1 into 6x2n
+    # shapes 2x4 pts1 into 6x2n
     # reminder: dimensions are y,x for numpy
     row, col = pts1.shape
     M = np.zeros([2*row, 6], dtype=np.float32)
-    #print M
     for y in range(row):
         M[2*y, 0:2] = pts1[y, :]
         M[2*y, 2] = 1
         M[2*y+1, 3:5] = pts1[y, :]
         M[2*y+1, 5] = 1
     
-    #print M
     # shape 2x4 pts2 into 1x2n
     N = pts2.reshape((8, 1))
-    #print N
 
     # use least-squares (since M isn't square) to calculate determinants
     x = np.linalg.lstsq(M, N)
-    #print x[0]
+    
     return np.reshape(x[0], (2, 3))
 
 def rectify(img):
@@ -56,19 +54,16 @@ def rectify(img):
     y, x = img.shape
     # pts are x, y from top corner in cv2
     pts1 = get_corners(img)
-    pts2 = np.array([[10, 10], [10, y-10], [x-10, y-10], [x-10, 10]])
-    #print pts1, pts2
-    det = get_affine(pts1, pts2)
-    #print det
-    warped_img = cv2.warpAffine(img, det, (x, y))
+    pts2 = np.array([[10, 10], [10, y-10], [x-10, y-10], [x-10, 10]], np.float32)
     
-    return warped_img
+    # shape is 3x2
+    det1 = get_affine(pts1, pts2)
+    # shape is 3x3
+    det2 = cv2.getPerspectiveTransform(pts1, pts2)
+    
+    return cv2.warpAffine(img, det1, (x, y)), cv2.warpPerspective(img, det2, (x, y))
 
-#pts = get_corners(img)
-#a = np.arange(1, 9).reshape((4, 2))
-#b = np.arange(-9, -1).reshape((4, 2))
-#print get_affine(a, b)
-#print cv2.getAffineTransform(a, b)
-out = rectify(img1)
-cv2.imshow('affine', out)
+out1, out2 = rectify(img1)
+cv2.imshow('affine', out1)
+cv2.imshow('homography', out2)
 cv2.waitKey()
