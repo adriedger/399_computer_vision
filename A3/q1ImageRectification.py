@@ -32,7 +32,7 @@ def get_corners(img):
 def get_affine(pts1, pts2):
 
     # shapes 2x4 pts1 into 6x2n
-    # reminder: dimensions are y,x for numpy
+    # **reminder: dimensions are y,x for numpy**
     row, col = pts1.shape
     M = np.zeros([2*row, 6], dtype=np.float32)
     for y in range(row):
@@ -52,7 +52,7 @@ def get_affine(pts1, pts2):
 def rectify(img):
     
     y, x = img.shape
-    # pts are x, y from top corner in cv2
+    # **reminder: dimensions are x, y from top corner in cv2**
     pts1 = get_corners(img)
     pts2 = np.array([[10, 10], [10, y-10], [x-10, y-10], [x-10, 10]], np.float32)
     

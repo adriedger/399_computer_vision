@@ -17,7 +17,7 @@ def detectAndDescribe(img, ftype='sift'):
 
 def matchKeypoints(kp1, kp2, des1, des2, mtype, ftype='sift', ratio=0.75):
     
-    # Match keypoints of both images
+    # Find matches of features of both images
     # brute force matching
     if mtype == 0:
         bf = cv2.BFMatcher(cv2.NORM_L2, True)
@@ -27,8 +27,8 @@ def matchKeypoints(kp1, kp2, des1, des2, mtype, ftype='sift', ratio=0.75):
         matches = bf.match(des1, des2)
         matches = sorted(matches, key = lambda x:x.distance)
 
-        matches = matches[:int(len(matches)*ratio)]
-        #print 'yo', matches
+        #matches = matches[:int(len(matches)*ratio)]
+        matches = matches[:300]
     
     # ratio distance matching
     else:
@@ -38,20 +38,21 @@ def matchKeypoints(kp1, kp2, des1, des2, mtype, ftype='sift', ratio=0.75):
     
         matches = bf.knnMatch(des1, des2, k=2)
         good_match = []
-        for m,n in matches:
+        for m, n in matches:
             if m.distance < ratio*n.distance:
-                good_match.append([m])
+                good_match.append(m)
         
         matches = good_match
 
     # Reminder: Result of bf.match(des1,des2) is a list of DMatch objects.
     #   DMatch.distance - Distance between descriptors. The lower, the better it is.
-    #   DMatch.trainIdx - Index of the descriptor (which corresponds to the keypoint) in train descriptors
+    #   DMatch.trainIdx - Index of the descriptor (corresponds to the keypoint) in train descriptors
     #   DMatch.queryIdx - Index of the descriptor in query descriptors
     #   DMatch.imgIdx - Index of the train image.
     
-    # Homography: Find a perspective transformation between two planes
+    # Find a perspective transformation between two feature sets (planes)
     # (needs more than 4 matches to work)
+    #print 'yo', matches, len(matches)
     if len(matches) > 4:
         # Extract location of matches in both images
         pts1 = np.zeros((len(matches), 2), dtype=np.float32)
@@ -69,12 +70,48 @@ def matchKeypoints(kp1, kp2, des1, des2, mtype, ftype='sift', ratio=0.75):
     return 0, 0 
 
 
-img1 = cv2.imread('data_q2_panor/seoul1.jpg', 0)
-img2 = cv2.imread('data_q2_panor/seoul2.jpg', 0)
+def stitch(img1, img2):
+    
+    # Get keypoints and descriptors in each image 
+    kp1, des1 = detectAndDescribe(img1, 'sift')
+    kp2, des2 = detectAndDescribe(img2, 'sift')   
+    # Get matches     
+    matches, H = matchKeypoints(kp1, kp2, des1, des2, 0, 'sift', 0.75)    
+    
+    # Visualize matches
+    imgMatches = cv2.drawMatches(img1, kp1, img2, kp2, matches, None)
+    cv2.imshow('matches', imgMatches)
+    
+    # Get dimensions of combined image
+    out_x = img1.shape[1] + img2.shape[1]
+    out_y = max(img1.shape[0], img2.shape[0])
+    # Do perspective tranformation on first image (does not work for some)
+    out1 = cv2.warpPerspective(img1, H, (out_x, out_y))
+    cv2.imshow('warp', out1)
+    # 2nd image will be basis for composed image
+    out2 = np.zeros((out_y, out_x), np.uint8)
+    # apply second image starting from top left corner
+    print out2.dtype, img2.dtype
+    out2[:img2.shape[0], :img2.shape[1]] = img2
+    # create mask to dull pixels that will be combined
+    mask = np.ones(out1.shape, np.float32)
+    mask[(out1>0)*(out2>0)] = 2.0
+    # add images, apply mask
+    out_img = (out1 + out2)/mask   
+    
+    return out2, imgMatches
+
+
+img1 = cv2.imread('data_q2_panor/macew1.jpg', 0)
+img2 = cv2.imread('data_q2_panor/macew2.jpg', 0)
 cv2.imshow('input1', img1)
 cv2.imshow('input2', img2)
-kp1, des1 = detectAndDescribe(img1, 'sift')
-kp2, des2 = detectAndDescribe(img2, 'sift')
-matches, H = matchKeypoints(kp1, kp2, des1, des2, 0, 'sift', 0.75)
-print H, H.dtype, H.shape
+#kp1, des1 = detectAndDescribe(img1, 'sift')
+#kp2, des2 = detectAndDescribe(img2, 'sift')
+#matches, H = matchKeypoints(kp1, kp2, des1, des2, 0, 'sift', 0.75)
+#matches, H = matchKeypoints(kp1, kp2, des1, des2, 1, 'sift', 0.75)
+#print H, H.dtype, H.shape
+pano, matches = stitch(img1, img2)
+#cv2.imshow('matches', matches)
+cv2.imshow('pano', pano)
 cv2.waitKey()
