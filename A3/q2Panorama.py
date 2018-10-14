@@ -27,8 +27,8 @@ def matchKeypoints(kp1, kp2, des1, des2, mtype, ftype='sift', ratio=0.75):
         matches = bf.match(des1, des2)
         matches = sorted(matches, key = lambda x:x.distance)
 
-        #matches = matches[:int(len(matches)*ratio)]
-        matches = matches[:300]
+        matches = matches[:int(len(matches)*ratio)]
+        #matches = matches[:300]
     
     # ratio distance matching
     else:
@@ -76,28 +76,28 @@ def stitch(img1, img2):
     kp1, des1 = detectAndDescribe(img1, 'sift')
     kp2, des2 = detectAndDescribe(img2, 'sift')   
     # Get matches     
-    matches, H = matchKeypoints(kp1, kp2, des1, des2, 0, 'sift', 0.75)    
+    matches, H = matchKeypoints(kp1, kp2, des1, des2, 1, 'sift', 0.75)    
     
     # Visualize matches
     imgMatches = cv2.drawMatches(img1, kp1, img2, kp2, matches, None)
     cv2.imshow('matches', imgMatches)
     
-    # Get dimensions of combined image
+    # Dimensions of combined image adds widths but keeps max height
     out_x = img1.shape[1] + img2.shape[1]
     out_y = max(img1.shape[0], img2.shape[0])
     # Do perspective tranformation on first image (does not work for some)
     out1 = cv2.warpPerspective(img1, H, (out_x, out_y))
     cv2.imshow('warp', out1)
-    # 2nd image will be basis for composed image
+    # init basis for composed image
     out2 = np.zeros((out_y, out_x), np.uint8)
-    # apply second image starting from top left corner
-    print out2.dtype, img2.dtype
+    # apply second image on rightmost area
     out2[:img2.shape[0], :img2.shape[1]] = img2
     # create mask to dull pixels that will be combined
     mask = np.ones(out1.shape, np.float32)
-    mask[(out1>0)*(out2>0)] = 2.0
+    mask[(out1>0)*(out2>0)] = 2.0 #**here**
     # add images, apply mask
-    out_img = (out1 + out2)/mask   
+    out2 = (out1.astype(np.float32) + out2.astype(np.float32))/mask
+    cv2.imshow('out2', out2.astype(np.uint8))
     
     return out2, imgMatches
 
@@ -113,5 +113,5 @@ cv2.imshow('input2', img2)
 #print H, H.dtype, H.shape
 pano, matches = stitch(img1, img2)
 #cv2.imshow('matches', matches)
-cv2.imshow('pano', pano)
+#cv2.imshow('pano', pano)
 cv2.waitKey()
