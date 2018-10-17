@@ -28,7 +28,6 @@ def matchKeypoints(kp1, kp2, des1, des2, mtype, ftype='sift', ratio=0.75):
         matches = sorted(matches, key = lambda x:x.distance)
 
         matches = matches[:int(len(matches)*ratio)]
-        #matches = matches[:300]
     
     # ratio distance matching
     else:
@@ -52,13 +51,11 @@ def matchKeypoints(kp1, kp2, des1, des2, mtype, ftype='sift', ratio=0.75):
     
     # Find a perspective transformation between two feature sets (planes)
     # (needs more than 4 matches to work)
-    #print 'yo', matches, len(matches)
     if len(matches) > 4:
         # Extract location of matches in both images
         pts1 = np.zeros((len(matches), 2), dtype=np.float32)
         pts2 = np.zeros((len(matches), 2), dtype=np.float32)        
         for y, m in enumerate(matches):
-            #print y, m, m.queryIdx, m.trainIdx
             pts1[y, :] = kp1[m.queryIdx].pt
             pts2[y, :] = kp2[m.trainIdx].pt        
 
@@ -90,16 +87,17 @@ def stitch(img1, img2):
     # Do perspective tranformation on second image
     img2warp = cv2.warpPerspective(img2, H, (out_x, out_y))
     cv2.imshow('warp', img2warp)
-    # init composed image
+    # Init master image
     masterImg = np.zeros((out_y, out_x), np.uint8)
-    # apply second image from topleft
+    # Apply first image from left->right
     masterImg[:img1.shape[0], :img1.shape[1]] = img1
-    # create mask to dull pixels that will be combined
+    # Create mask to dull pixels that will be combined
     mask = np.ones(img2warp.shape, np.float32)
     mask[(img2warp>0)*(masterImg>0)] = 2.0 #**here**
-    # add images, apply mask
+    # Add images, apply mask
     masterImg = (img2warp.astype(np.float32) + masterImg.astype(np.float32))/mask
     cv2.imshow('master', masterImg.astype(np.uint8))
+    #REMINDER: Homography calculates translation of img2 relative to img1
     
     return masterImg, imgMatches
 
@@ -107,7 +105,7 @@ def stitch(img1, img2):
 img1 = cv2.imread('data_q2_panor/macew1.jpg', 0)
 img2 = cv2.imread('data_q2_panor/macew2.jpg', 0)
 #img1 = cv2.resize(img1, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_CUBIC)
-#mg2 = cv2.resize(img2, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_CUBIC)
+#img2 = cv2.resize(img2, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_CUBIC)
 cv2.imshow('input1', img1)
 cv2.imshow('input2', img2)
 #kp1, des1 = detectAndDescribe(img1, 'sift')
