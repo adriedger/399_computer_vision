@@ -74,10 +74,12 @@ def stitch(img1, img2):
     
     # Get keypoints and descriptors in each image 
     kp1, des1 = detectAndDescribe(img1, 'sift')
+    print "Keypoints found in first img:", len(kp1)
     kp2, des2 = detectAndDescribe(img2, 'sift')   
-    # Get matches     
-    matches, H = matchKeypoints(kp1, kp2, des1, des2, 1, 'sift', 0.75)    
-    
+    print "Keypoints found in second img:", len(kp2)
+    # Get matches, homography from img2 -> img1     
+    matches, H = matchKeypoints(kp2, kp1, des2, des1, 1, 'sift', 0.75)    
+    print "Matches found:", len(matches)
     # Visualize matches
     imgMatches = cv2.drawMatches(img1, kp1, img2, kp2, matches, None)
     cv2.imshow('matches', imgMatches)
@@ -85,25 +87,27 @@ def stitch(img1, img2):
     # Dimensions of combined image adds widths but keeps max height
     out_x = img1.shape[1] + img2.shape[1]
     out_y = max(img1.shape[0], img2.shape[0])
-    # Do perspective tranformation on first image (does not work for some)
-    out1 = cv2.warpPerspective(img1, H, (out_x, out_y))
-    cv2.imshow('warp', out1)
-    # init basis for composed image
-    out2 = np.zeros((out_y, out_x), np.uint8)
-    # apply second image on rightmost area
-    out2[:img2.shape[0], :img2.shape[1]] = img2
+    # Do perspective tranformation on second image
+    img2warp = cv2.warpPerspective(img2, H, (out_x, out_y))
+    cv2.imshow('warp', img2warp)
+    # init composed image
+    masterImg = np.zeros((out_y, out_x), np.uint8)
+    # apply second image from topleft
+    masterImg[:img1.shape[0], :img1.shape[1]] = img1
     # create mask to dull pixels that will be combined
-    mask = np.ones(out1.shape, np.float32)
-    mask[(out1>0)*(out2>0)] = 2.0 #**here**
+    mask = np.ones(img2warp.shape, np.float32)
+    mask[(img2warp>0)*(masterImg>0)] = 2.0 #**here**
     # add images, apply mask
-    out2 = (out1.astype(np.float32) + out2.astype(np.float32))/mask
-    cv2.imshow('out2', out2.astype(np.uint8))
+    masterImg = (img2warp.astype(np.float32) + masterImg.astype(np.float32))/mask
+    cv2.imshow('master', masterImg.astype(np.uint8))
     
-    return out2, imgMatches
+    return masterImg, imgMatches
 
 
 img1 = cv2.imread('data_q2_panor/macew1.jpg', 0)
 img2 = cv2.imread('data_q2_panor/macew2.jpg', 0)
+#img1 = cv2.resize(img1, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_CUBIC)
+#mg2 = cv2.resize(img2, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_CUBIC)
 cv2.imshow('input1', img1)
 cv2.imshow('input2', img2)
 #kp1, des1 = detectAndDescribe(img1, 'sift')
