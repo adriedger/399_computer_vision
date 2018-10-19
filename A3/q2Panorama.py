@@ -11,7 +11,7 @@ def detectAndDescribe(img, ftype='sift'):
         sift = cv2.xfeatures2d.SIFT_create()
         return sift.detectAndCompute(img, None)
     if ftype == 'orb':
-        orb = cv2.ORB()
+        orb = cv2.ORB_create()
         return orb.detectAndCompute(img, None)
 
 
@@ -51,6 +51,7 @@ def matchKeypoints(kp1, kp2, des1, des2, mtype, ftype='sift', ratio=0.75):
     
     # Find a perspective transformation between two feature sets (planes)
     # (needs more than 4 matches to work)
+    print "Matches found:", len(matches)
     if len(matches) > 4:
         # Extract location of matches in both images
         pts1 = np.zeros((len(matches), 2), dtype=np.float32)
@@ -60,7 +61,8 @@ def matchKeypoints(kp1, kp2, des1, des2, mtype, ftype='sift', ratio=0.75):
             pts2[y, :] = kp2[m.trainIdx].pt        
 
         H, _ = cv2.findHomography(pts1, pts2, 0)
-
+        print "Homography: ", H
+        
         return matches, H
 
     print "Error: Less than 5 matches were found"
@@ -70,16 +72,15 @@ def matchKeypoints(kp1, kp2, des1, des2, mtype, ftype='sift', ratio=0.75):
 def stitch(img1, img2):
     
     # Get keypoints and descriptors in each image 
-    kp1, des1 = detectAndDescribe(img1, 'sift')
+    kp1, des1 = detectAndDescribe(img1, 'orb')
     print "Keypoints found in first img:", len(kp1)
-    kp2, des2 = detectAndDescribe(img2, 'sift')   
+    kp2, des2 = detectAndDescribe(img2, 'orb')   
     print "Keypoints found in second img:", len(kp2)
     # Get matches, homography from img2 -> img1     
-    matches, H = matchKeypoints(kp2, kp1, des2, des1, 1, 'sift', 0.75)    
-    print "Matches found:", len(matches)
+    matches, H = matchKeypoints(kp2, kp1, des2, des1, 1, 'orb', 0.75)    
     # Visualize matches
-    imgMatches = cv2.drawMatches(img1, kp1, img2, kp2, matches, None)
-    cv2.imshow('matches', imgMatches)
+    imgMatches = cv2.drawMatches(img2, kp2, img1, kp1, matches, None)
+    #cv2.imshow('matches', imgMatches)
     
     # Dimensions of combined image adds widths but keeps max height
     out_x = img1.shape[1] + img2.shape[1]
@@ -96,24 +97,20 @@ def stitch(img1, img2):
     mask[(img2warp>0)*(masterImg>0)] = 2.0 #**here**
     # Add images, apply mask
     masterImg = (img2warp.astype(np.float32) + masterImg.astype(np.float32))/mask
-    cv2.imshow('master', masterImg.astype(np.uint8))
+    #cv2.imshow('master', masterImg.astype(np.uint8))
     #REMINDER: Homography calculates translation of img2 relative to img1
     
-    return masterImg, imgMatches
-
+    return masterImg.astype(np.uint8), imgMatches
 
 img1 = cv2.imread('data_q2_panor/macew1.jpg', 0)
-img2 = cv2.imread('data_q2_panor/macew2.jpg', 0)
+img2 = cv2.imread('data_q2_panor/macew6.jpg', 0)
+#img1 = cv2.imread('../DJI_0003.JPG', 0)
+#img2 = cv2.imread('../DJI_0004.JPG', 0)
 #img1 = cv2.resize(img1, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_CUBIC)
 #img2 = cv2.resize(img2, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_CUBIC)
 cv2.imshow('input1', img1)
 cv2.imshow('input2', img2)
-#kp1, des1 = detectAndDescribe(img1, 'sift')
-#kp2, des2 = detectAndDescribe(img2, 'sift')
-#matches, H = matchKeypoints(kp1, kp2, des1, des2, 0, 'sift', 0.75)
-#matches, H = matchKeypoints(kp1, kp2, des1, des2, 1, 'sift', 0.75)
-#print H, H.dtype, H.shape
 pano, matches = stitch(img1, img2)
-#cv2.imshow('matches', matches)
-#cv2.imshow('pano', pano)
+cv2.imshow('matches', matches)
+cv2.imshow('pano', pano)
 cv2.waitKey()
