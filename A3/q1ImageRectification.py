@@ -5,10 +5,12 @@ import numpy as np
 import cv2 
 
 img1 = cv2.imread('data_q1_rect/book1.jpg', 0)
+img2 = cv2.imread('data_q1_rect/scanned-form.jpg', 0)
 
 def get_corners(img):
     
-    print "Double-click on the four corners of the quadrilateral"
+    print "Double-click on the four corners of the quadrilateral."
+    print "Must be clockwise from top left."
     pts = []
     img_copy = np.copy(img)
     # mouse callback function, runs this function on mouse double-click
@@ -64,6 +66,9 @@ def rectify(img):
     return cv2.warpAffine(img, det1, (x, y)), cv2.warpPerspective(img, det2, (x, y))
 
 out1, out2 = rectify(img1)
-cv2.imshow('affine', out1)
-cv2.imshow('homography', out2)
+cv2.imshow('affine_book', out1)
+cv2.imshow('homography_book', out2)
+out3, out4 = rectify(img2)
+cv2.imshow('affine_form', out3)
+cv2.imshow('homography_form', out4)
 cv2.waitKey()

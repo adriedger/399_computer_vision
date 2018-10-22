@@ -72,13 +72,14 @@ def matchKeypoints(kp1, kp2, des1, des2, mtype, ftype='sift', ratio=0.75):
 
 def stitch(img1, img2):
     
+    ft = 'orb'
     # Get keypoints and descriptors in each image 
-    kp1, des1 = detectAndDescribe(img1, 'orb')
+    kp1, des1 = detectAndDescribe(img1, ft)
     print "Keypoints found in first img:", len(kp1)
-    kp2, des2 = detectAndDescribe(img2, 'orb')   
+    kp2, des2 = detectAndDescribe(img2, ft)   
     print "Keypoints found in second img:", len(kp2)
     # Get matches, homography from img2 -> img1     
-    matches, H = matchKeypoints(kp2, kp1, des2, des1, 1, 'orb', 0.75)    
+    matches, H = matchKeypoints(kp2, kp1, des2, des1, 1, ft, 0.75)    
     # Visualize matches
     imgMatches = cv2.drawMatches(img2, kp2, img1, kp1, matches, None)
     #cv2.imshow('matches', imgMatches)
@@ -88,7 +89,7 @@ def stitch(img1, img2):
     out_y = max(img1.shape[0], img2.shape[0])
     # Do perspective tranformation on second image
     img2warp = cv2.warpPerspective(img2, H, (out_x, out_y))
-    cv2.imshow('warp', img2warp)
+    #cv2.imshow('warp', img2warp)
     # Init master image
     masterImg = np.zeros((out_y, out_x), np.uint8)
     # Apply first image from left->right
@@ -105,13 +106,14 @@ def stitch(img1, img2):
 
 img1 = cv2.imread('data_q2_panor/macew1.jpg', 0)
 img2 = cv2.imread('data_q2_panor/macew6.jpg', 0)
-#img1 = cv2.imread('../DJI_0003.JPG', 0)
-#img2 = cv2.imread('../DJI_0004.JPG', 0)
-#img1 = cv2.resize(img1, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_CUBIC)
-#img2 = cv2.resize(img2, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_CUBIC)
-cv2.imshow('input1', img1)
-cv2.imshow('input2', img2)
-pano, matches = stitch(img1, img2)
-cv2.imshow('matches', matches)
-cv2.imshow('pano', pano)
+img3 = cv2.imread('data_q2_panor/seoul1.jpg', 0)
+img4 = cv2.imread('data_q2_panor/seoul2.jpg', 0)
+#cv2.imshow('input1', img1)
+#cv2.imshow('input2', img2)
+pano1, matches1 = stitch(img1, img2)
+pano2, matches2 = stitch(img3, img4)
+#cv2.imshow('matches1', matches1)
+cv2.imshow('pano1_macewan_orb_ratioDistance_RANSAC', pano1)
+#cv2.imshow('matches2', matches2)
+cv2.imshow('pano2_seoul', pano2)
 cv2.waitKey()
