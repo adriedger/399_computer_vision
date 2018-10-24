@@ -13,6 +13,9 @@ def detectAndDescribe(img, ftype='sift'):
     if ftype == 'orb':
         orb = cv2.ORB_create()
         return orb.detectAndCompute(img, None)
+    if ftype == 'surf':
+        surf = cv2.xfeatures2d.SURF_create(400)
+        return surf.detectAndCompute(img, None)
 
 
 def matchKeypoints(kp1, kp2, des1, des2, mtype, ftype='sift', ratio=0.75):
@@ -60,9 +63,10 @@ def matchKeypoints(kp1, kp2, des1, des2, mtype, ftype='sift', ratio=0.75):
             pts1[y, :] = kp1[m.queryIdx].pt
             pts2[y, :] = kp2[m.trainIdx].pt        
 
-        H, _ = cv2.findHomography(pts1, pts2, cv2.LMEDS)
-        print H
         # 0 - reg method using all points, RANSAC, LMEDS - Least-Median       
+        H, _ = cv2.findHomography(pts1, pts2, cv2.RANSAC)
+        print H
+
         return matches, H
 
     print "Error: Less than 5 matches were found"
@@ -70,27 +74,30 @@ def matchKeypoints(kp1, kp2, des1, des2, mtype, ftype='sift', ratio=0.75):
 
 
 def stitch(img1, img2):
-    
+
+    fd = 'surf'
     # Get keypoints and descriptors in each image 
-    kp1, des1 = detectAndDescribe(img1, 'sift')
+    kp1, des1 = detectAndDescribe(img1, fd)
     print "Keypoints found in first img:", len(kp1)
-    kp2, des2 = detectAndDescribe(img2, 'sift')   
+    kp2, des2 = detectAndDescribe(img2, fd)   
     print "Keypoints found in second img:", len(kp2)
     # Get matches, homography from img2 -> img1     
-    matches, H = matchKeypoints(kp2, kp1, des2, des1, 1, 'sift', 0.75)    
+    matches, H = matchKeypoints(kp2, kp1, des2, des1, 1, fd, 0.75)    
     # Visualize matches
     imgMatches = cv2.drawMatches(img2, kp2, img1, kp1, matches, None)
     
+    y1, x1, _ = img1.shape
+    y2, x2, _ = img2.shape
     #estimate dimentions of combined image
-    out_x = img1.shape[1] + img2.shape[1]
-    out_y = img1.shape[0] + img2.shape[0]
+    out_x = x1 + x2
+    out_y = y1 + y2
     # Do perspective tranformation on second image
     img2warp = cv2.warpPerspective(img2, H, (out_x, out_y))
     cv2.imshow('warp', img2warp)
     # Init master image
     masterImg = np.zeros((out_y, out_x, 3), np.uint8)
     # Apply first image from left->right
-    masterImg[:img1.shape[0], :img1.shape[1]] = img1
+    masterImg[:y1, :x1] = img1
     # Create mask to dull pixels that will be combined
     mask = np.ones(img2warp.shape, np.float32)
     mask[(img2warp>0)*(masterImg>0)] = 2.0 #**here**
@@ -106,6 +113,7 @@ img1 = cv2.imread('../DJI_0003.JPG')
 img2 = cv2.imread('../DJI_0004.JPG')
 img1 = cv2.resize(img1, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_CUBIC)
 img2 = cv2.resize(img2, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_CUBIC)
+img1 = cv2.copyMakeBorder(img1, 300, 300, 300, 300, cv2.BORDER_CONSTANT, 0)
 cv2.imshow('input1', img1)
 cv2.imshow('input2', img2)
 pano, matches = stitch(img1, img2)
