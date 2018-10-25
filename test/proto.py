@@ -1,6 +1,7 @@
 #Andre Driedger 1805536
 #Prof: Dana Cobzas CMPT 399 Computer Vision
 
+import sys
 import numpy as np
 import cv2 
 
@@ -78,19 +79,23 @@ def stitch(imgs):
         return None
 
     fd = 'orb'
-
-    imgs[0] = cv2.copyMakeBorder(imgs[0], 400, 400, 400, 400, cv2.BORDER_CONSTANT, 0)
-    out_x = 3000
-    out_y = 3000    
-    masterImg = np.zeros((out_y, out_x, 3), np.uint8)
-    masterImg[:imgs[0].shape[0], :imgs[0].shape[1]] = imgs[0]
+    
+    #**do composing seperately**
+    y, x, _ = imgs[0].shape
+    masterImg = cv2.copyMakeBorder(imgs[0], y/4, y/4, x/4, x/4, cv2.BORDER_CONSTANT, 0)
+    out_x = masterImg.shape[1]
+    out_y = masterImg.shape[0]
+    #masterImg = np.zeros((out_y, out_x, 3), np.uint8)
+    #masterImg[:start_img.shape[0], :start_img.shape[1]] = start_img
+    #**pre-estimate padding before calculating each homography
 
     for i in range(len(imgs) - 1):
-
-        kp1, des1 = detectAndDescribe(imgs[i], fd)
-        print "Keypoints found in first img:", len(kp1)
+        
+        train_img = cv2.copyMakeBorder(imgs[i], y/4, y/4, x/4, x/4, cv2.BORDER_CONSTANT, 0)
+        kp1, des1 = detectAndDescribe(train_img, fd)
+        print "Keypoints found in train img:", len(kp1)
         kp2, des2 = detectAndDescribe(imgs[i+1], fd)   
-        print "Keypoints found in second img:", len(kp2)
+        print "Keypoints found in query img:", len(kp2)
         
         matches, H = matchKeypoints(kp2, kp1, des2, des1, 1, fd, 0.75)
         print "Matches found:", len(matches)
@@ -107,27 +112,18 @@ def stitch(imgs):
         
         mask = np.ones(imgWarp.shape, np.float32)
         mask[(imgWarp>0)*(masterImg>0)] = 2.0 #**here**
-        # Add image, apply mask
+        
         masterImg = (imgWarp.astype(np.float32) + masterImg.astype(np.float32))/mask
     
     return masterImg.astype(np.uint8)
 
-#img1 = cv2.imread('data_q2_panor/macew1.jpg', 0)
-#img2 = cv2.imread('data_q2_panor/macew6.jpg', 0)
-img1 = cv2.imread('../DJI_0003.JPG')
-img2 = cv2.imread('../DJI_0004.JPG')
-img3 = cv2.imread('../DJI_0005.JPG')
-img4 = cv2.imread('../DJI_0006.JPG')
-img1 = cv2.resize(img1, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_CUBIC)
-img2 = cv2.resize(img2, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_CUBIC)
-img3 = cv2.resize(img3, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_CUBIC)
-img4 = cv2.resize(img4, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_CUBIC)
-#img1 = cv2.copyMakeBorder(img1, 400, 400, 400, 400, cv2.BORDER_CONSTANT, 0)
-cv2.imshow('input1', img1)
-cv2.imshow('input2', img2)
-cv2.imshow('input3', img3)
-imgs = [img2, img3]
+imgs = []
+for i in range(1, len(sys.argv)):
+    img = cv2.imread(str(sys.argv[i])) 
+    img = cv2.resize(img, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_CUBIC)
+    cv2.imshow(str(sys.argv[i]), img)
+    imgs.append(img)
+
 pano = stitch(imgs)
-#cv2.imshow('matches', matches)
 cv2.imshow('pano', pano)
 cv2.waitKey()
