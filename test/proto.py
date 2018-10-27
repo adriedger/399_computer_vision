@@ -20,41 +20,19 @@ def detectAndDescribe(img, ftype='sift'):
 
 
 def matchKeypoints(kp1, kp2, des1, des2, mtype, ftype='sift', ratio=0.75):
-    
-    # Find matches of features of both images
-    # brute force matching
-    if mtype == 0:
-        bf = cv2.BFMatcher(cv2.NORM_L2, True)
-        if ftype == 'orb':
-            bf = cv2.BFMatcher(cv2.NORM_HAMMING, True)
 
-        matches = bf.match(des1, des2)
-        matches = sorted(matches, key = lambda x:x.distance)
+    bf = cv2.BFMatcher(cv2.NORM_L2, False)
+    if ftype == 'orb':
+        bf = cv2.BFMatcher(cv2.NORM_HAMMING, False)
 
-        matches = matches[:int(len(matches)*ratio)]
+    matches = bf.knnMatch(des1, des2, k=2)
+    good_match = []
+    for m, n in matches:
+        if m.distance < ratio*n.distance:
+            good_match.append(m)
     
-    # ratio distance matching
-    else:
-        bf = cv2.BFMatcher(cv2.NORM_L2, False)
-        if ftype == 'orb':
-            bf = cv2.BFMatcher(cv2.NORM_HAMMING, False)
-    
-        matches = bf.knnMatch(des1, des2, k=2)
-        good_match = []
-        for m, n in matches:
-            if m.distance < ratio*n.distance:
-                good_match.append(m)
-        
-        matches = good_match
+    matches = good_match
 
-    # Reminder: Result of bf.match(des1,des2) is a list of DMatch objects.
-    #   DMatch.distance - Distance between descriptors. The lower, the better it is.
-    #   DMatch.trainIdx - Index of the descriptor (corresponds to the keypoint) in train descriptors
-    #   DMatch.queryIdx - Index of the descriptor in query descriptors
-    #   DMatch.imgIdx - Index of the train image.
-    
-    # Find a perspective transformation between two feature sets (planes)
-    # (needs more than 4 matches to work)
     if len(matches) > 4:
         # Extract location of matches in both images
         pts1 = np.zeros((len(matches), 2), dtype=np.float32)
@@ -63,13 +41,32 @@ def matchKeypoints(kp1, kp2, des1, des2, mtype, ftype='sift', ratio=0.75):
             pts1[y, :] = kp1[m.queryIdx].pt
             pts2[y, :] = kp2[m.trainIdx].pt        
 
-        # 0 - reg method using all points, RANSAC, LMEDS - Least-Median       
-        H, _ = cv2.findHomography(pts1, pts2, cv2.RANSAC)
+        # 0 - reg method using all points RANSAC LMEDS - Least-Median, ransacReprojThreshold
+        H, mask = cv2.findHomography(pts1, pts2, cv2.RANSAC, 5.0)
 
-        return matches, H
+        return matches, H, mask
 
     print "Error: Less than 5 matches were found"
     return 0, 0 
+
+
+def warpTwoImages(img1, img2, H):
+    '''warp img2 to img1 with homography H'''
+    #Calculate resultant image size, then do a translation
+    h1, w1, _ = img1.shape
+    h2, w2, _ = img2.shape
+    pts1 = np.float32([[0,0],[0,h1],[w1,h1],[w1,0]]).reshape(-1,1,2)
+    pts2 = np.float32([[0,0],[0,h2],[w2,h2],[w2,0]]).reshape(-1,1,2)
+    pts2_ = cv2.perspectiveTransform(pts2, H)
+    pts = np.concatenate((pts1, pts2_), axis=0)
+    [xmin, ymin] = np.int32(pts.min(axis=0).ravel() - 0.5)
+    [xmax, ymax] = np.int32(pts.max(axis=0).ravel() + 0.5)
+    t = [-xmin,-ymin]
+    Ht = np.array([[1,0,t[0]],[0,1,t[1]],[0,0,1]]) # translate
+
+    result = cv2.warpPerspective(img2, Ht.dot(H), (xmax-xmin, ymax-ymin))
+    result[t[1]:h1+t[1], t[0]:w1+t[0]] = img1
+    return result
 
 
 def stitch(imgs):
@@ -80,42 +77,19 @@ def stitch(imgs):
 
     fd = 'orb'
     
-    #**do composing seperately**
-    y, x, _ = imgs[0].shape
-    masterImg = cv2.copyMakeBorder(imgs[0], y/4, y/4, x/4, x/4, cv2.BORDER_CONSTANT, 0)
-    out_x = masterImg.shape[1]
-    out_y = masterImg.shape[0]
-    #masterImg = np.zeros((out_y, out_x, 3), np.uint8)
-    #masterImg[:start_img.shape[0], :start_img.shape[1]] = start_img
-    #**pre-estimate padding before calculating each homography
-
     for i in range(len(imgs) - 1):
         
-        train_img = cv2.copyMakeBorder(imgs[i], y/4, y/4, x/4, x/4, cv2.BORDER_CONSTANT, 0)
-        kp1, des1 = detectAndDescribe(train_img, fd)
+        kp1, des1 = detectAndDescribe(imgs[i], fd)
         print "Keypoints found in train img:", len(kp1)
         kp2, des2 = detectAndDescribe(imgs[i+1], fd)   
         print "Keypoints found in query img:", len(kp2)
         
-        matches, H = matchKeypoints(kp2, kp1, des2, des1, 1, fd, 0.75)
+        matches, H, mask = matchKeypoints(kp2, kp1, des2, des1, 1, fd, 0.75)
         print "Matches found:", len(matches)
         print H
-        
-        if i > 0:
-            H = np.matmul(H, pre_H)
-        pre_H = H
-        
-        # Visualize matches
-        #imgMatches = cv2.drawMatches(img2, kp2, img1, kp1, matches, None)         
-        
-        imgWarp = cv2.warpPerspective(imgs[i+1], H, (out_x, out_y))
-        
-        mask = np.ones(imgWarp.shape, np.float32)
-        mask[(imgWarp>0)*(masterImg>0)] = 2.0 #**here**
-        
-        masterImg = (imgWarp.astype(np.float32) + masterImg.astype(np.float32))/mask
-    
-    return masterImg.astype(np.uint8)
+
+        out = warpTwoImages(imgs[i], imgs[i+1], H)       
+        return out
 
 imgs = []
 for i in range(1, len(sys.argv)):
