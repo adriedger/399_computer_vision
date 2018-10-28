@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as anim
 
-# que.stion 1.a# capture imges from a src_dir or camera
+# question 1.a# capture imges from a src_dir or camera
 def getImages(n_frames, diff=0, src_dir=''):
     
     # you will store images in a list img_seq 
