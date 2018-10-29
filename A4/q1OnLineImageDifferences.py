@@ -44,15 +44,6 @@ def getDifference(img_seq, threshold):
         
     return img_seq_diff
 
-
-# computes point on a grid of block_size for an image of size [img_width,img_height]**Dana's code
-def getGridPoints(img_width,img_height,block_size):
-    _X = np.asarray(range(0, img_width - 1, block_size)) + block_size // 2
-    _Y = np.asarray(range(0, img_height - 1, block_size)) + block_size // 2
-
-    [X, Y] = np.meshgrid(_X, _Y)
-    return X,Y
-
 #img_seq = getImages(32)
 img_seq = getImages(32, 0, 'Arm32im')
 
