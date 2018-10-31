@@ -99,9 +99,11 @@ def draw_flow(img, U, V, X, Y):
     return vis
 
 
-
+# test images
 #img_seq = getImages(32, 0, 'Arm32im')
-img_seq = getImages(32)
+#img_seq = getImages(60, 0, 'Flower60im3')
+# webcam
+img_seq = getImages(60)
 
 img_seq_diff = getDifference(img_seq, 50)
 
