@@ -1,2 +1,4 @@
 *.pyc
 *.swp
+A5/*_res.txt
+A5/tracking_stats.txt
