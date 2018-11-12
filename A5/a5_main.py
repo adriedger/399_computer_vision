@@ -5,8 +5,8 @@ import numpy as np
 import math
 import time
 
-# from tracker_opencv import Tracker
-from tracker_lk_opencv import Tracker
+from tracker_opencv import Tracker
+#from tracker_lk_opencv import Tracker
 
 
 def readTrackingData(filename):
@@ -141,7 +141,11 @@ for frame_id in range(1, no_of_frames):
     writeCorners(result_file, tracker_corners)
 
     # compute the tracking fps
-    current_fps = 1.0 / (end_time - start_time)
+    if (end_time - start_time) == 0:
+        blah = 1
+    else:
+        blah = end_time -start_time
+    current_fps = 1.0 / blah
     mean_fps += (current_fps-mean_fps)/frame_id
 
 

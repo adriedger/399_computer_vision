@@ -45,7 +45,7 @@ class Tracker:
             self.init_img = cv2.cvtColor(self.init_img, cv2.COLOR_BGR2GRAY)
         # gaussian filter 
         self.init_img = cv2.GaussianBlur(self.init_img, (self.gauss_kernel_size, self.gauss_kernel_size), 0)
-        # fit a straingt rectangle to init corners
+        # fit a straight rectangle to init corners
         x, y, w, h = self.getBestFitRectangle(corners)
         w = int(w) 
         h = int(h)        
@@ -165,5 +165,6 @@ class Tracker:
             self.template = self.init_img[int(y): int(y + h): self.skip, int(x): int(x + w): self.skip]
             self.template_h, self.template_w = self.template.shape
             cv2.imshow('template', self.template.astype(np.uint8))
-
+        
+        #print(self.curr_corners)
         return self.curr_corners
