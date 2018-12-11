@@ -1,3 +1,5 @@
+#Andre Driedger
+
 import os, argparse, sys, math, time
 import cv2
 import numpy as np
@@ -213,6 +215,6 @@ def main():
         ax2.set_zlabel('Z')
         ax2.set_title('Reconstructed cube')
  
-        #plt.show()
+        plt.show()
 
 main()

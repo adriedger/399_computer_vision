@@ -1,5 +1,4 @@
-# Jacinda Shulman
-# 3050764
+# Andre Driedger
 
 import os, argparse, sys, math, time
 import cv2
