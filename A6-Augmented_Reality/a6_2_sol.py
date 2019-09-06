@@ -56,13 +56,13 @@ def main():
         print('seq_id: {}'.format(seq_id))
         print('seq_name: {}'.format(seq_name))
 
-        src_fname = os.path.join('../A5/data/'+seq_name, img_template)
+        src_fname = os.path.join('../A5-Tracking/data/'+seq_name, img_template)
         cap = cv2.VideoCapture(src_fname)
         if cap is None:
             print('Image sequence {} could not be opened'.format(src_fname))
             sys.exit()
         # read the ground truth
-        ground_truth_fname = '../A5/data/ground_truth/'+seq_name + '.txt'
+        ground_truth_fname = '../A5-Tracking/data/ground_truth/'+seq_name + '.txt'
         ground_truth = readTrackingData(ground_truth_fname)
         no_of_frames = ground_truth.shape[0]
 

@@ -1,7 +1,0 @@
-A1 - Filters
-A2 - Detectors, descriptors and matching
-A3 - Image alignment and panoramas
-A4 - Dynamic vision and optic flow
-A5 - Tracking
-A6 - Augmented reality
-A7 - Geometry
