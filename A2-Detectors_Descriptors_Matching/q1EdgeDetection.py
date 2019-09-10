@@ -4,8 +4,8 @@
 import numpy as np
 import cv2 
 
-#img = cv2.imread('data_q1/bsds_3096.jpg')
-img = cv2.imread('lena.tif')
+img = cv2.imread('data_q1/bsds_3096.jpg')
+#img = cv2.imread('lena.tif')
 cv2.imshow('input', img)
 
 def edge_detection(img, method):
